@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Schwingkreis Visualizer</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src='https://code.jquery.com/jquery-3.7.1.min.js' integrity='sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=' crossorigin='anonymous'></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<style>
+    main {
+        display: flex;
+        align-items: center;
+        margin: 0;
+        flex-direction: column;
+        margin-top: 50px;
+    }
+    canvas {
+        border: 1px solid;
+        position: sticky;
+        top: 20px;
+        z-index: 999;
+        backdrop-filter: blur(20px);
+        background-color: #1f293775;
+        -webkit-backdrop-filter: blur(20px);
+    }
+    .math-container {
+        background-color: #4b5563;
+        padding: 20px;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 100%;
+        max-width: 800px;
+    }
+</style>
+<body class="bg-gray-800 text-gray-300">
+    <main class="p-4">
+        <h1 class="text-5xl mb-9">Schwingkreis Visualizer</h1>
+        <canvas id="sinusCanvas" class="border-gray-600 rounded-xl" width="800" height="400"></canvas>
+        <button id="downloadBtn" class="py-2 px-6 bg-blue-700 rounded-lg mt-2 mb-3">Als Bild Herunterladen</button>
+        
+        <div style="display: flex; flex-direction: column;">
+        <details class="bg-gray-600 py-2 px-4 my-2 rounded-lg" style="user-select: none;">
+            <summary>Konfigurationen</summary>
+            <div style="display: flex; flex-direction: column; margin-bottom: 20px;">
+                <label>Schaltungstyp</label>
+                <select id="circuitType" class="h-10 text-lg bg-gray-700 rounded-lg">
+                    <option value="series" selected>Serienschwingkreis</option>
+                    <option value="parallel">Parallelschwingkreis</option>
+                </select>
+                <label>Widerstand Position</label>
+                <select id="resistorPosition" class="h-10 text-lg bg-gray-700 rounded-lg">
+                    <option value="series" selected>In Reihe zur Spule</option>
+                    <option value="parallel">Parallel zur Spule</option>
+                </select>
+                <label>Eingabe Methode</label>
+                <select id="eingabe" class="h-10 text-lg bg-gray-700 rounded-lg">
+                    <optgroup label="eingabe">
+                        <option value="range" selected>range</option>
+                        <option value="number">number</option>
+                    </optgroup>
+                </select>
+                <label>Einheit</label>
+                <select id="bereich" class="h-10 text-lg bg-gray-700 rounded-lg">
+                    <optgroup label="Bereich">
+                        <option value="1e-3">milli</option>
+                        <option value="1e-6" selected>mikro</option>
+                        <option value="1e-9">nano</option>
+                        <option value="1e-12">pico</option>
+                    </optgroup>
+                </select>
+                <label>Bereich von R</label>
+                <select id="bereichR" class="h-10 text-lg bg-gray-700 rounded-lg">
+                    <optgroup label="Bereich">
+                        <option value="1e-3">1mΩ - 1Ω</option>
+                        <option value="1" selected>1Ω - 1kΩ</option>
+                        <option value="1e3">1kΩ - 1MΩ</option>
+                        <option value="1e6">1MΩ - 1GΩ</option>
+                    </optgroup>
+                </select>
+            </div>
+        </details>
+        <details class="bg-gray-600 py-2 px-4 my-2 rounded-lg" style="user-select: none; width: 800px;">
+            <summary>Bauteil Werte</summary>
+                <div style="display: flex; flex-direction: column; margin-bottom: 20px;">
+                <label>L</label>
+                <input class="h-10 text-lg bg-gray-700 rounded-lg p-2" style="" id="LVal" type="range" min="0.000000000001" max="0.00001" step="0.000000000001" value="0.01">
+                <label>C</label>
+                <input class="h-10 text-lg bg-gray-700 rounded-lg p-2" style="" id="CVal" type="range" min="0.000000000001" max="0.00001" step="0.000000000001" value="0.3">
+                <label>R</label>
+                <input class="h-10 text-lg bg-gray-700 rounded-lg p-2" style="" id="RVal" type="range" min="0.00001" max="0.1" step="0.001" value="0.001">
+                <label>U</label>
+                <input class="h-10 text-lg bg-gray-700 rounded-lg p-2" style="" id="UVal" type="range" min="1" max="100" step="1" value="2">
+            </div>
+        </details>
+        <details class="bg-gray-600 py-2 px-4 my-2 rounded-lg" style="user-select: none; width: 800px;">
+            <summary>Oszilliskop</summary>
+            <div style="display: flex; flex-direction: column; margin-bottom: 20px;">
+                <label>Zoom</label>
+                <input class="h-10 text-lg bg-gray-700 rounded-lg p-2" style="" id="zoomFactor" type="range" min="1" max="1000" step="0.01" value="1000">
+                <label>Amplitude</label>
+                <input class="h-10 text-lg bg-gray-700 rounded-lg p-2" style="" id="amplitude" type="range" min="10" max="200" step="1" value="100">
+                <label>Liniendicke</label>
+                <input class="h-10 text-lg bg-gray-700 rounded-lg p-2" style="" id="ldicke" type="range" min="1" max="20" step="1" value="1">
+                <label>Zeitabschnitte</label>
+                <input class="h-10 text-lg bg-gray-700 rounded-lg p-2" style="" id="timeRange" type="range" min="0" max="20" step="1" value="7">
+                <label>Schriftgröße</label>
+                <input class="h-10 text-lg bg-gray-700 rounded-lg p-2" style="" id="fontSize" type="range" min="6" max="40" step="1" value="12">
+            </div>
+        </details>
+            <span class="text-lg" id="out"></span>
+            <span class="text-lg" id="frequency"></span>
+            <span class="text-lg" id="quality"></span>
+            <span class="text-lg" id="bandwidth"></span>
+            <span class="text-lg" id="dampingTime"></span>
+            <br><br>
+        </div>
+        <details class="math-container text-white text-sm">
+            <summary class="text-lg">Verwendete Formeln</summary>
+            <h2 class="text-2xl">Verwendete Formeln</h2>
+            <p>Ungedämpfte Frequenz \( f_0 \):</p>
+            <p>\[
+                f_0 = \frac{1}{2\pi\sqrt{LC}}
+            \]</p>
+            <p>Gedämpfte Frequenz \( f_{gedämpft} \):</p>
+            <p>\[
+                f_{gedämpft} = f_0 \sqrt{1 - \left(\frac{R}{2\sqrt{\frac{L}{C}}}\right)^2} \quad \text{(Serienschwingkreis)}
+            \]</p>
+            <p>\[
+                f_{gedämpft} = \frac{1}{2\pi\sqrt{\frac{LC}{1 + \left(\frac{R}{2\sqrt{\frac{L}{C}}}\right)^2}}} \quad \text{(Parallelschwingkreis)}\]
+            </p>
+            <p>Güte \( Q \):</p>
+            <p>\[
+                Q = \frac{1}{R}\sqrt{\frac{L}{C}} \quad \text{(Serienschwingkreis)}\]
+            </p>
+            <p>\[
+                Q = R \sqrt{\frac{C}{L}} \quad \text{(Parallelschwingkreis)}\]
+            </p>
+            <p>Bandbreite \( B \):</p>
+            <p>\[
+                B = \frac{f_0}{Q}\]
+            </p>
+            <p>Dämpfungszeit \( t_d \):</p>
+            <p>\[
+                t_d = \frac{1}{\alpha} = \frac{2L}{R} \quad \text{(Serienschwingkreis)}\]
+            </p>
+            <p>\[
+                t_d = RC \quad \text{(Parallelschwingkreis)}\]
+            </p>
+        </details>
+        <script>
+            const canvas = document.getElementById('sinusCanvas');
+            const ctx = canvas.getContext('2d');
+
+            let bereichWahl = 1000;
+            let zoomFactor = 1;
+            let animationId;
+            $('#zoomFactor').attr('value', 1000);
+            
+
+            function updateRanges() {
+                const bereich = parseFloat($('#bereich').val());
+                const maxVal = bereich * bereichWahl;
+                $('#LVal').attr('max', maxVal);
+                $('#LVal').attr('min', bereich);
+                $('#LVal').attr('step', bereich / 1000);
+                $('#LVal').attr('value', 1e-3);
+                $('#CVal').attr('max', maxVal);
+                $('#CVal').attr('min', bereich);
+                $('#CVal').attr('step', bereich / 1000);
+                $('#CVal').attr('value', 1e-6);
+                $('#RVal').attr('max', $('#bereichR').val() * 1000);
+                $('#RVal').attr('min', $('#bereichR').val());
+                if($('#bereichR').val() == 1e-3){
+                    $('#RVal').attr('step', 0.001);
+                } else {
+                    $('#RVal').attr('step', 1);
+                }
+                $('#RVal').attr('value', 1);
+
+                switch($('#bereich').val()){
+                    case '1e-3':
+                        $('#zoomFactor').attr('max', 10);
+                        break;
+                    case '1e-6':
+                        $('#zoomFactor').attr('max', 10000);
+                        break;
+                    case '1e-9':
+                        $('#zoomFactor').attr('max', 10000000);
+                        break;
+                    case '1e-12':
+                        $('#zoomFactor').attr('max', 10000000000);
+                        break;
+                }
+
+                getValues();
+            }
+
+            $('#circuitType').on('input', getValues);
+            $('#resistorPosition').on('input', getValues);
+            $('#eingabe').on('input', function(){
+                $('#LVal').attr('type', $('#eingabe').val());
+                $('#CVal').attr('type', $('#eingabe').val());
+                $('#RVal').attr('type', $('#eingabe').val());
+                $('#zoomFactor').attr('type', $('#eingabe').val());
+            });
+
+            $('#bereichWahl').on('input', function(){
+                bereichWahl = parseFloat($('#bereichWahl').val());
+                updateRanges();
+            });
+
+            $('#bereich').on('input', updateRanges);
+            $('#LVal').on('input', getValues);
+            $('#CVal').on('input', getValues);
+            $('#RVal').on('input', getValues);
+            $('#zoomFactor').on('input', function() {
+                zoomFactor = parseFloat($('#zoomFactor').val());
+                drawPSK();
+            });
+            $('#amplitude').on('input', function() {
+                drawPSK();
+            });
+
+            $('#ldicke').on('input', function() {
+                drawPSK();
+            });
+
+            $('#timeRange').on('input', function() {
+                drawPSK();
+            });
+
+            $('#fontSize').on('input', function() {
+                drawPSK();
+            });
+
+            $('#UVal').on('input', function() {
+                drawPSK();
+            });
+
+            $('#bereichR').on('input', function() {
+                updateRanges();
+            });
+
+            zoomFactor = 1000;
+
+            function getValues(){
+                const L = parseFloat($('#LVal').val());
+                const C = parseFloat($('#CVal').val());
+                const R = parseFloat($('#RVal').val());
+                const circuitType = $('#circuitType').val();
+                const resistorPosition = $('#resistorPosition').val();
+                let f0, f_damped, Q, B, alpha, dampingTime;
+
+                if (circuitType === "series") {
+                    f0 = 1 / (2 * Math.PI * Math.sqrt(L * C));
+                    if (resistorPosition === "series") {
+                        f_damped = f0 * Math.sqrt(1 - Math.pow(R / (2 * Math.sqrt(L / C)), 2));
+                        Q = (1 / R) * Math.sqrt(L / C);
+                        alpha = R / (2 * L);
+                    } else {
+                        f_damped = f0;
+                        Q = R * Math.sqrt(C / L);
+                        alpha = 1 / (R * C);
+                    }
+                } else {
+                    f0 = 1 / (2 * Math.PI * Math.sqrt(L * C));
+                    f_damped = 1 / (2 * Math.PI * Math.sqrt((L * C) / (1 + Math.pow((R / (2 * Math.sqrt(L / C))), 2))));
+                    Q = R * Math.sqrt(C / L);
+                    alpha = 1 / (R * C);
+                }
+
+                B = f0 / Q;
+                dampingTime = 1 / alpha;
+
+                $('#out').text('L = ' + formatUnit(L) + "H, C = " + formatUnit(C) + "F, R = " + formatUnit(R) + "Ω");
+                $('#frequency').html('Ungedämpfte Frequenz (f0) = ' + formatUnit(f0.toFixed(2)) + 'Hz, Gedämpfte Frequenz = ' + formatUnit(f_damped.toFixed(2)) + 'Hz');
+                $('#quality').text('Güte (Q) = ' + Q.toFixed(2));
+                $('#bandwidth').text('Bandbreite (B) = ' + formatUnit(B) + 'Hz');
+                $('#dampingTime').text('Dämpfungszeit (\( t_d \)) = ' + formatUnit(dampingTime) + 's');
+                drawPSK();
+            }
+
+            function formatUnit(value, float) {
+                if(float == ''){
+                    float = 2
+                }
+
+                value = parseFloat(value);
+                if (value >= 1e9) return (value / 1e9).toFixed(float) + ' E';
+                if (value >= 1e9) return (value / 1e9).toFixed(float) + ' P';
+                if (value >= 1e9) return (value / 1e9).toFixed(float) + ' T';
+                if (value >= 1e9) return (value / 1e9).toFixed(float) + ' G';
+                if (value >= 1e6) return (value / 1e6).toFixed(float) + ' M';
+                if (value >= 1e3) return (value / 1e3).toFixed(float) + ' k';
+                if (value >= 1) return value.toFixed(2);
+                if (value >= 1e-3) return (value * 1e3).toFixed(float) + ' m';
+                if (value >= 1e-6) return (value * 1e6).toFixed(float) + ' µ';
+                if (value >= 1e-9) return (value * 1e9).toFixed(float) + ' n';
+                if (value >= 1e-12) return (value * 1e12).toFixed(float) + ' p';
+                return value;
+            }
+
+            const dt = 0.01;
+            const offsetX = 100;
+            const offsetY = canvas.height / 2;
+
+            function drawPSK() {
+                const L = parseFloat($('#LVal').val());
+                const C = parseFloat($('#CVal').val());
+                const R = parseFloat($('#RVal').val());
+                const circuitType = $('#circuitType').val();
+                const resistorPosition = $('#resistorPosition').val();
+                let f0, f_damped;
+
+                if (circuitType === "series") {
+                    f0 = 1 / (2 * Math.PI * Math.sqrt(L * C));
+                    if (resistorPosition === "series") {
+                        f_damped = f0 * Math.sqrt(1 - Math.pow(R / (2 * Math.sqrt(L / C)), 2));
+                    } else {
+                        f_damped = f0;
+                    }
+                } else {
+                    f0 = 1 / (2 * Math.PI * Math.sqrt(L * C));
+                    f_damped = 1 / (2 * Math.PI * Math.sqrt((L * C) / (1 + Math.pow((R / (2 * Math.sqrt(L / C))), 2))));
+                }
+
+                function simulate(t) {
+                    const alpha = R / (2 * L);
+                    return $('#amplitude').val() * Math.exp(-alpha * t) * Math.cos(2 * Math.PI * f_damped * t);
+                }
+
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                }
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.lineWidth = 1;
+
+                // Achsen zeichnen und beschriften
+                ctx.strokeStyle = '#aaffaaaF';
+                ctx.beginPath();
+                ctx.moveTo(0, offsetY);
+                ctx.lineTo(canvas.width, offsetY);
+                ctx.stroke();
+                ctx.fillStyle = "#bfbfbf";
+                ctx.font = $('#fontSize').val()+"px Arial";
+
+                ctx.fillText("Amplitude (V)", offsetX + 10, 20); // Y-Achsenbeschriftung
+
+                ctx.beginPath();
+                ctx.moveTo(offsetX, 0);
+                ctx.lineTo(offsetX, canvas.height);
+                ctx.stroke();
+
+                // Zeit auf der X-Achse anzeigen
+                const numTicks = 6;
+                const tickSpacing = (canvas.width - offsetX) / $('#timeRange').val();
+                for (let i = 0; i <= $('#timeRange').val(); i++) {
+                    let x = offsetX + i * tickSpacing;
+                    let t = formatUnit((i * tickSpacing * dt / zoomFactor));
+                    ctx.fillText(t + "s", x, offsetY + 20); // X-Achsenbeschriftung
+                }
+
+                // Y-Achse anzeigen
+                const yTicks = 5;
+                const maxY = parseFloat($('#UVal').val());
+                const yTickSpacing = (canvas.height / 2) / yTicks;
+                for (let i = 0; i <= yTicks; i++) {
+                    let y = offsetY - i * yTickSpacing;
+                    let yValue = (i * maxY / yTicks).toFixed(1);
+                    ctx.fillText(yValue + "V", 10, y); // Y-Achsenbeschriftung (positiv)
+                    ctx.fillText(-yValue + "V", 10, canvas.height - y); // Y-Achsenbeschriftung (negativ)
+                }
+
+                ctx.strokeStyle = '#bfbfbf';
+                ctx.lineWidth = $('#ldicke').val();
+
+                ctx.beginPath();
+                for (let x = 0; x < canvas.width; x++) {
+                    let t = x * dt / zoomFactor;
+                    let y = simulate(t);
+                    ctx.lineTo(offsetX + x, offsetY - y);
+                }
+                ctx.stroke();
+
+                time += dt;
+                animationId = requestAnimationFrame(drawPSK);
+            }
+
+            $(document).ready(function() {
+                updateRanges();
+                getValues();
+            });
+
+
+            downloadBtn.addEventListener('click', function() {
+                // Daten-URL des Canvas als PNG-Bild erhalten
+                var dataURL = canvas.toDataURL('image/png');
+
+                // Ein temporäres Link-Element erstellen
+                var link = document.createElement('a');
+                link.href = dataURL;
+                link.download = 'schwingkreis.png';
+
+                // Klick-Event auf dem Link auslösen
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        </script>
+    </main>
+    <footer class="bg-gray-700 text-white text-center p-4">
+        © 2024 Sharkotech / Luis Halbeisen. All rights reserved.
+    </footer>
+</body>
+</html>
