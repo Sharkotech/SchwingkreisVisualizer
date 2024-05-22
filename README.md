@@ -22,3 +22,7 @@ Dieses Projekt ist unter der [MIT-Lizenz](https://opensource.org/licenses/MIT) l
 
 Wenn Sie den Code verwenden möchten, müssen Sie Sharkotech auf GitHub erwähnen und einen Verweis auf https://luis-halbeisen.at/schwingkreisVisualizer angeben. Sie dürfen den Code nicht als Ihren eigenen ausgeben.
 
+
+## Danke!
+
+Ein besonderer Dank geht an `Stefan Zudrell Koch` für seine Hilfe bei der Implementierung der richtigen Formeln in diesem Programm.
