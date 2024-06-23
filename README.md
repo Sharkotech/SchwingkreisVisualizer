@@ -1,6 +1,6 @@
 # SchwingkreisVisualizer
 
-Willkommen zum SchwingkreisVisualizer-Projekt!
+[![Typing SVG](https://readme-typing-svg.demolab.com/?lines=Willkommen zum SchwingkreisVisualizer-Projekt!)](https://git.io/typing-svg)
 
 ## Überblick
 
